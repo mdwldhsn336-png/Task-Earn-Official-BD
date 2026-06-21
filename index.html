@@ -166,7 +166,7 @@
         </div>
 
         <div id="referral-page" class="custom-modal"><header class="header"><h2 onclick="closeSubPage()" style="cursor:pointer;"><i class="fas fa-arrow-left"></i> Invite Friends</h2></header><div class="container"><h3 style="text-align:center; margin-bottom:10px; font-weight:800;">Referral Program</h3><p style="text-align:center; color:var(--muted); margin-bottom:25px; font-weight:600;">Earn <span id="ref-percent-display" style="color:var(--primary); font-weight:800;">10</span>% commission on your friends' approved tasks!</p><div style="display:flex; justify-content:space-around; gap:10px; margin-bottom:30px;"><div style="width:105px; height:105px; border-radius:50%; border:5px solid var(--primary); display:flex; flex-direction:column; justify-content:center; align-items:center; background:var(--card); box-shadow:0 5px 15px rgba(79,70,229,0.2);"><span style="font-size:1.3rem; font-weight:800; color:var(--text);" id="ref-total-earn">৳ 0</span><span style="font-size:0.75rem; color:var(--muted); font-weight:600;">Commission</span></div><div style="width:105px; height:105px; border-radius:50%; border:5px solid var(--success); display:flex; flex-direction:column; justify-content:center; align-items:center; background:var(--card); box-shadow:0 5px 15px rgba(16,185,129,0.2);"><span style="font-size:1.3rem; font-weight:800; color:var(--text);" id="ref-today-earn">৳ 0</span><span style="font-size:0.75rem; color:var(--muted); font-weight:600;">Today Earn</span></div><div style="width:105px; height:105px; border-radius:50%; border:5px solid var(--warning); display:flex; flex-direction:column; justify-content:center; align-items:center; background:var(--card); box-shadow:0 5px 15px rgba(245,158,11,0.2);"><span style="font-size:1.3rem; font-weight:800; color:var(--text);" id="ref-user-count">0</span><span style="font-size:0.75rem; color:var(--muted); font-weight:600;">Users</span></div></div><div class="section-box" style="text-align:center;"><i class="fas fa-gift" style="font-size:2.5rem; color:var(--primary); margin-bottom:15px;"></i><p style="font-size:0.95rem; font-weight:600; margin-bottom:15px;">Share this link with your friends to start earning.</p><div class="data-box" onclick="copyData(this, 'ref-link-text')" style="background:var(--bg); border:2px dashed var(--primary); padding:15px;"><div id="ref-link-text" style="font-size:0.85rem; word-break:break-all; font-weight:600; text-align:left; color:var(--text);">Loading link...</div><i class="fas fa-copy" style="color:var(--primary); font-size:1.2rem;"></i></div></div></div></div>
-        <div id="top-page" class="page"><div class="container"><h3 style="margin-bottom: 15px; font-size:1.4rem; font-weight:800;"><i class="fas fa-trophy" style="color:gold;"></i> রিয়েলটাইম লিডারবোর্ড</h3><div class="leaderboard-list" id="leaderboard-container"></div></div></div>
+        <div id="top-page" class="page"><div class="container"><h3 style="margin-bottom: 15px; font-size:1.4rem; font-weight:800;"><i class="fas fa-trophy" style="color:gold;"></i> আজকের লিডারবোর্ড</h3><div class="leaderboard-list" id="leaderboard-container"></div></div></div>
         <div id="task-page" class="page"><div class="container"><h3 style="margin-bottom: 15px; font-size:1.4rem; font-weight:800;">Available Tasks</h3><div id="task-list-container"><div style="text-align:center; padding:20px; color:var(--muted);"><i class="fas fa-spinner fa-spin"></i> Loading Tasks...</div></div></div></div>
 
         <div id="wallet-page" class="page">
@@ -261,20 +261,27 @@
     </div>
 
     <script type="module">
+        // Referral link parser - run immediately
+        const urlParams = new URLSearchParams(window.location.search);
+        const refParam = urlParams.get('ref');
+        if (refParam) {
+            localStorage.setItem('referrerId', refParam);
+        }
+
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile, deleteUser, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection, addDoc, deleteDoc, getDocs, query, where, orderBy, limit, serverTimestamp, increment, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDCcb1VOTRCk2dP66XMxeitb8wf6BfwEww",
-  authDomain: "task-earn-official-bd.firebaseapp.com",
-  projectId: "task-earn-official-bd",
-  storageBucket: "task-earn-official-bd.firebasestorage.app",
-  messagingSenderId: "1022088277717",
-  appId: "1:1022088277717:web:3caa681a305694ed1efc5c",
-  measurementId: "G-S052K34XK2"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCcb1VOTRCk2dP66XMxeitb8wf6BfwEww",
+            authDomain: "task-earn-official-bd.firebaseapp.com",
+            projectId: "task-earn-official-bd",
+            storageBucket: "task-earn-official-bd.firebasestorage.app",
+            messagingSenderId: "1022088277717",
+            appId: "1:1022088277717:web:3caa681a305694ed1efc5c",
+            measurementId: "G-S052K34XK2"
+        };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app); const provider = new GoogleAuthProvider();
 
         let currentUser = null; let globalTaskConfig = {}; let currentActiveTasks = []; let sheetConfigs = {}; let generatedTaskId = ""; let userDocData = {}; let activeTaskObj = null; let liveSubmissions = [];
@@ -305,11 +312,55 @@ const firebaseConfig = {
             } else { document.getElementById('user-app').style.display = 'none'; document.getElementById('admin-app').style.display = 'none'; document.getElementById('login-page').classList.add('active'); }
         });
 
-        async function checkOrCreateUserDoc(user) { const userRef = doc(db, "users", user.uid); const snap = await getDoc(userRef); let refId = localStorage.getItem('referrerId'); if (refId === user.uid) refId = null; if (!snap.exists()) { let finalRefId = refId || defaultRefUid; if (user.uid === defaultRefUid || user.email === "ajmirrahman84@gmail.com") finalRefId = null; userDocData = { name: user.displayName, email: user.email, photo: user.photoURL, approved: 0, rejected: 0, earned: 0, pending: 0, processing: 0, withdrawStatus: "None", withdrawn: 0, banned: false, joinDate: new Date().toLocaleDateString('en-GB'), referrerId: finalRefId, refEarn: 0, refToday: 0, refCount: 0, tgJoined: false }; await setDoc(userRef, userDocData); if(finalRefId) { await updateDoc(doc(db, "users", finalRefId), { refCount: increment(1) }).catch(e=>console.log(e)); } localStorage.removeItem('referrerId'); } else { userDocData = snap.data(); let updates = { name: user.displayName, photo: user.photoURL }; if (!userDocData.referrerId && user.uid !== defaultRefUid && user.email !== "ajmirrahman84@gmail.com") { updates.referrerId = defaultRefUid; await updateDoc(doc(db, "users", defaultRefUid), { refCount: increment(1) }).catch(e=>console.log(e)); userDocData.referrerId = defaultRefUid; } await updateDoc(userRef, updates); localStorage.removeItem('referrerId'); } }
+        async function checkOrCreateUserDoc(user) { 
+            const userRef = doc(db, "users", user.uid); 
+            const snap = await getDoc(userRef); 
+            let refId = localStorage.getItem('referrerId'); 
+            if (refId === user.uid) refId = null; 
+            if (!snap.exists()) { 
+                let finalRefId = refId || defaultRefUid; 
+                if (user.uid === defaultRefUid || user.email === "ajmirrahman84@gmail.com") finalRefId = null; 
+                userDocData = { 
+                    name: user.displayName, email: user.email, photo: user.photoURL, 
+                    approved: 0, todayApproved: 0, rejected: 0, earned: 0, pending: 0, processing: 0, 
+                    withdrawStatus: "None", withdrawn: 0, banned: false, joinDate: new Date().toLocaleDateString('en-GB'), 
+                    referrerId: finalRefId, refEarn: 0, refToday: 0, refCount: 0, tgJoined: false 
+                }; 
+                await setDoc(userRef, userDocData); 
+                if(finalRefId) { 
+                    await updateDoc(doc(db, "users", finalRefId), { refCount: increment(1) }).catch(e=>console.log(e)); 
+                } 
+                localStorage.removeItem('referrerId'); 
+            } else { 
+                userDocData = snap.data(); 
+                let updates = { name: user.displayName, photo: user.photoURL }; 
+                if (!userDocData.referrerId && user.uid !== defaultRefUid && user.email !== "ajmirrahman84@gmail.com") { 
+                    updates.referrerId = defaultRefUid; 
+                    await updateDoc(doc(db, "users", defaultRefUid), { refCount: increment(1) }).catch(e=>console.log(e)); 
+                    userDocData.referrerId = defaultRefUid; 
+                } 
+                await updateDoc(userRef, updates); 
+                localStorage.removeItem('referrerId'); 
+            } 
+        }
         function updateProfileUI(user) { let initial = user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'; document.getElementById('u-initial').innerText = initial; document.getElementById('u-fullname').innerText = user.displayName; document.getElementById('u-email').innerText = user.email; document.getElementById('setting-name-input').value = user.displayName; }
         function listenToUserStats(uid) { onSnapshot(doc(db, "users", uid), (docSnap) => { if(docSnap.exists()){ let d = docSnap.data(); userDocData = d; if(d.banned) { logoutUser(); alert("You are banned!"); return; } document.getElementById('stat-app').innerText = d.approved || 0; document.getElementById('stat-earn').innerText = "৳ " + parseFloat(d.earned||0).toFixed(2); document.getElementById('wallet-bal').innerText = "৳ " + parseFloat(d.earned||0).toFixed(2); document.getElementById('stat-pend').innerText = d.pending || 0; document.getElementById('stat-proc').innerText = d.processing || 0; document.getElementById('stat-with').innerText = d.withdrawStatus || "None"; document.getElementById('ref-total-earn').innerText = "৳ " + (d.refEarn||0).toFixed(2); document.getElementById('ref-today-earn').innerText = "৳ " + (d.refToday||0).toFixed(2); document.getElementById('ref-user-count').innerText = d.refCount||0; } }); }
         function setupReferralPage(uid) { document.getElementById('ref-link-text').innerText = window.location.origin + window.location.pathname + "?ref=" + uid; }
-        function listenToLeaderboard() { onSnapshot(query(collection(db, "users"), orderBy("approved", "desc"), limit(20)), (snap) => { let html = ''; let rank = 1; snap.forEach(docSnap => { let d = docSnap.data(); if(d.approved > 0 && !d.banned) { let isMe = docSnap.id === currentUser.uid ? 'me' : ''; let nameTxt = docSnap.id === currentUser.uid ? 'আপনি' : d.name; html += `<div class="lb-item ${isMe}"><span class="lb-rank">${rank}</span><div class="lb-user"><img src="${d.photo||'https://via.placeholder.com/100'}"> ${nameTxt}</div><span class="lb-score">${d.approved} Tasks</span></div>`; rank++; } }); document.getElementById('leaderboard-container').innerHTML = html || '<p style="text-align:center; color:var(--muted); padding:20px; font-weight:600;">No ranks yet.</p>'; }); }
+        function listenToLeaderboard() { 
+            onSnapshot(query(collection(db, "users"), orderBy("todayApproved", "desc"), limit(20)), (snap) => { 
+                let html = ''; let rank = 1; 
+                snap.forEach(docSnap => { 
+                    let d = docSnap.data(); 
+                    if(d.todayApproved > 0 && !d.banned) { 
+                        let isMe = docSnap.id === currentUser.uid ? 'me' : ''; 
+                        let nameTxt = docSnap.id === currentUser.uid ? 'আপনি' : d.name; 
+                        html += `<div class="lb-item ${isMe}"><span class="lb-rank">${rank}</span><div class="lb-user"><img src="${d.photo||'https://via.placeholder.com/100'}"> ${nameTxt}</div><span class="lb-score">${d.todayApproved} Tasks</span></div>`; 
+                        rank++; 
+                    } 
+                }); 
+                document.getElementById('leaderboard-container').innerHTML = html || '<p style="text-align:center; color:var(--muted); padding:20px; font-weight:600;">No ranks yet today.</p>'; 
+            }); 
+        }
         function listenToGlobalConfig() { onSnapshot(doc(db, "settings", "config"), (docSnap) => { if(docSnap.exists()){ globalTaskConfig = docSnap.data(); document.getElementById('user-notice').innerText = globalTaskConfig.notice || "কোনো নোটিশ নেই।"; if(globalTaskConfig.tgLink) document.getElementById('tg-link').href = globalTaskConfig.tgLink; if(globalTaskConfig.waLink) document.getElementById('wa-link').href = globalTaskConfig.waLink; if(globalTaskConfig.acLink) document.getElementById('ac-link').href = globalTaskConfig.acLink; document.getElementById('ref-percent-display').innerText = globalTaskConfig.refPercent || 10; document.getElementById('w-rules').innerText = globalTaskConfig.wRules || `মিনিমাম উইথড্র ৳${globalTaskConfig.wMin||50}`; } }); }
         function listenToSheetConfig() { onSnapshot(doc(db, "settings", "sheetConfig"), (docSnap) => { if(docSnap.exists()){ sheetConfigs = docSnap.data(); } else { sheetConfigs = {}; } if(currentUser && adminEmails.includes(currentUser.email)) renderSavedSheetsList(); }); }
 
@@ -341,12 +392,31 @@ const firebaseConfig = {
             activeTaskObj = currentActiveTasks.find(t => t.id === taskId); if(!activeTaskObj) return showToast("Task not found!", "error");
             let fname = fnameDB[Math.floor(Math.random() * fnameDB.length)]; let lname = lnameDB[Math.floor(Math.random() * lnameDB.length)];
             let uname = fname.toLowerCase() + "_" + lname.toLowerCase() + Math.floor(1000 + Math.random() * 9000); let genGmail = fname.toLowerCase() + lname.toLowerCase() + Math.floor(100+Math.random()*900) + "@gmail.com";
-            generatedTaskId = "WP-" + Math.floor(10000 + Math.random() * 90000);
+            
+            // Unique Task ID Logic
+            generatedTaskId = "WP-" + Date.now().toString().slice(-5) + Math.floor(100 + Math.random() * 900);
             
             document.getElementById('current-task-id').innerText = "Task ID: " + generatedTaskId; document.getElementById('task-firstname').innerText = fname; document.getElementById('task-lastname').innerText = lname; document.getElementById('task-fullname').innerText = fname + " " + lname; document.getElementById('task-username').innerText = uname; document.getElementById('task-gengmail').innerText = genGmail; document.getElementById('task-password').innerText = activeTaskObj.password || 'N/A'; document.getElementById('modal-task-name').innerHTML = `<i class="fas fa-tasks"></i> ${activeTaskObj.name}`;
 
-            if(activeTaskObj.type === 'gmail') { document.getElementById('first-name-box').style.display = 'flex'; document.getElementById('last-name-box').style.display = 'flex'; document.getElementById('full-name-box').style.display = 'none'; document.getElementById('username-box').style.display = 'none'; document.getElementById('gen-gmail-box').style.display = 'flex'; document.getElementById('task-rec-mail').innerText = activeTaskObj.recoveryMail; document.getElementById('recovery-mail-box').style.display = 'flex'; } 
-            else { document.getElementById('first-name-box').style.display = 'none'; document.getElementById('last-name-box').style.display = 'none'; document.getElementById('full-name-box').style.display = 'flex'; document.getElementById('username-box').style.display = 'flex'; document.getElementById('gen-gmail-box').style.display = 'none'; document.getElementById('recovery-mail-box').style.display = 'none'; }
+            if(activeTaskObj.type === 'gmail' || activeTaskObj.type === 'fb') { 
+                document.getElementById('first-name-box').style.display = 'flex'; 
+                document.getElementById('last-name-box').style.display = 'flex'; 
+                document.getElementById('full-name-box').style.display = 'none'; 
+                document.getElementById('username-box').style.display = 'none'; 
+            } else { 
+                document.getElementById('first-name-box').style.display = 'none'; 
+                document.getElementById('last-name-box').style.display = 'none'; 
+                document.getElementById('full-name-box').style.display = 'flex'; 
+                document.getElementById('username-box').style.display = 'flex'; 
+            }
+            if (activeTaskObj.type === 'gmail') {
+                document.getElementById('gen-gmail-box').style.display = 'flex'; 
+                document.getElementById('task-rec-mail').innerText = activeTaskObj.recoveryMail; 
+                document.getElementById('recovery-mail-box').style.display = 'flex';
+            } else {
+                document.getElementById('gen-gmail-box').style.display = 'none'; 
+                document.getElementById('recovery-mail-box').style.display = 'none';
+            }
 
             document.getElementById('password-box').style.display = 'flex'; document.getElementById('2fa-section').style.display = 'none'; document.getElementById('cookie-section').style.display = 'none'; document.getElementById('uid-section').style.display = 'none'; document.getElementById('2fa-secret').value = ''; document.getElementById('otp-result-box').style.display = 'none'; document.getElementById('cookie-input').value = ''; document.getElementById('uid-input').value = '';
             
@@ -371,7 +441,38 @@ const firebaseConfig = {
             if(activeTaskObj.isUid) { fbUid = document.getElementById('uid-input').value; if(!fbUid) return showToast("Facebook UID required!", "error"); }
             fName = document.getElementById('task-firstname').innerText; lName = document.getElementById('task-lastname').innerText; fullName = document.getElementById('task-fullname').innerText;
             if(activeTaskObj.type === 'gmail') { genMail = document.getElementById('task-gengmail').innerText; recMail = activeTaskObj.recoveryMail; }
-            await withLoading(btn, async () => { await addDoc(collection(db, "submissions"), { taskId: generatedTaskId, activeTaskId: activeTaskObj.id, taskName: activeTaskObj.name, taskType: activeTaskObj.type, username: uName, firstName: fName, lastName: lName, fullName: fullName, generatedEmail: genMail, password: pass, secret2fa: secret, cookie: cookie, facebookUid: fbUid, recoveryMail: recMail, submittedBy: currentUser.email, uid: currentUser.uid, price: activeTaskObj.price, status: "pending", archived: false, time: new Date().toISOString() }); await updateDoc(doc(db, "users", currentUser.uid), { pending: increment(1) }); showToast("Task Submitted Successfully!", "success"); closeSubPage(); });
+            
+            await withLoading(btn, async () => { 
+                await addDoc(collection(db, "submissions"), { taskId: generatedTaskId, activeTaskId: activeTaskObj.id, taskName: activeTaskObj.name, taskType: activeTaskObj.type, username: uName, firstName: fName, lastName: lName, fullName: fullName, generatedEmail: genMail, password: pass, secret2fa: secret, cookie: cookie, facebookUid: fbUid, recoveryMail: recMail, submittedBy: currentUser.email, uid: currentUser.uid, price: activeTaskObj.price, status: "pending", archived: false, time: new Date().toISOString() }); 
+                await updateDoc(doc(db, "users", currentUser.uid), { pending: increment(1) }); 
+                showToast("Task Submitted Successfully!", "success"); 
+                
+                // Auto refresh new data inside the modal to prevent multiple same task submissions and allow continuous work
+                generatedTaskId = "WP-" + Date.now().toString().slice(-5) + Math.floor(100 + Math.random() * 900);
+                document.getElementById('current-task-id').innerText = "Task ID: " + generatedTaskId;
+                
+                let n_fname = fnameDB[Math.floor(Math.random() * fnameDB.length)]; 
+                let n_lname = lnameDB[Math.floor(Math.random() * lnameDB.length)];
+                let n_uname = n_fname.toLowerCase() + "_" + n_lname.toLowerCase() + Math.floor(1000 + Math.random() * 9000); 
+                let n_genGmail = n_fname.toLowerCase() + n_lname.toLowerCase() + Math.floor(100+Math.random()*900) + "@gmail.com";
+                
+                document.getElementById('task-firstname').innerText = n_fname;
+                document.getElementById('task-lastname').innerText = n_lname;
+                document.getElementById('task-fullname').innerText = n_fname + " " + n_lname;
+                document.getElementById('task-username').innerText = n_uname;
+                document.getElementById('task-gengmail').innerText = n_genGmail;
+
+                document.getElementById('2fa-secret').value = '';
+                document.getElementById('cookie-input').value = '';
+                document.getElementById('uid-input').value = '';
+                document.getElementById('otp-result-box').style.display = 'none';
+                document.querySelectorAll('.data-box').forEach(el => el.classList.remove('copied'));
+                
+                window.taskValidation.is2FADone = !activeTaskObj.is2FA;
+                window.taskValidation.isCookieDone = !activeTaskObj.isCookie;
+                window.taskValidation.isUidDone = !activeTaskObj.isUid;
+                window.checkTaskSubmitStatus();
+            });
         };
 
         window.startTgTask = (link, btn) => { if(!link) return showToast("No link available", "error"); window.open(link, '_blank'); let tgBtn = btn.nextElementSibling; if(tgBtn && tgBtn.id.startsWith('tg-verify-btn')) tgBtn.style.display = 'flex'; };
@@ -396,7 +497,7 @@ const firebaseConfig = {
 
         window.searchUser = (val) => { let term = val.toLowerCase(); document.querySelectorAll('#admin-user-list .user-card').forEach(card => { if(card.innerText.toLowerCase().includes(term)) card.style.display = 'flex'; else card.style.display = 'none'; }); }; window.openUserModal = (id, name, email, earned, app, banned, joinDate) => { event.stopPropagation(); document.getElementById('admin-ud-content').innerHTML = `<div class="section-box" style="text-align:center;"><h2 style="font-weight:800; font-size:1.8rem;">${name}</h2><p style="color:var(--muted); font-weight:600;">${email}</p><h3 style="color:var(--primary); margin-top:15px; font-size:2rem;">৳ <span id="modal-u-bal">${parseFloat(earned).toFixed(2)}</span></h3><div style="margin-top:10px; display:flex; gap:10px; justify-content:center;"><input type="number" id="edit-u-bal" class="input-box" style="width:100px; margin:0;" value="${earned}"><button class="btn-main" style="width:auto; padding:10px;" onclick="updateUserBal('${id}', this)">Update</button></div><div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:15px; margin-top:20px; display:flex; justify-content:space-around;"><div><p style="font-size:0.8rem; color:var(--muted);">Total Approved</p><b style="font-size:1.2rem; color:var(--success);">${app}</b></div><div><p style="font-size:0.8rem; color:var(--muted);">Join Date</p><b style="font-size:1.1rem; color:var(--text);">${joinDate}</b></div></div><p style="color:${banned?'var(--danger)':'var(--success)'}; font-weight:800; font-size:1.2rem; margin-top:15px; padding:10px; background:var(--bg); border-radius:10px;">Status: ${banned?'BANNED':'ACTIVE'}</p></div>`; openSubPage('admin-user-details'); }; window.updateUserBal = async (uid, btn) => { let newBal = parseFloat(document.getElementById('edit-u-bal').value); await withLoading(btn, async () => { await updateDoc(doc(db, "users", uid), { earned: newBal }); document.getElementById('modal-u-bal').innerText = newBal.toFixed(2); showToast("Balance updated manually!", "success"); }); }; window.toggleBan = async (uid, banStatus) => { event.stopPropagation(); await updateDoc(doc(db, "users", uid), { banned: banStatus }); showToast("User status updated!", "success"); }; window.openWithdrawDetailsModal = async (docId, uid, name, method, account, amount) => { showToast("Fetching details...", "info"); let uSnap = await getDoc(doc(db, "users", uid)); let uData = uSnap.exists() ? uSnap.data() : {approved: 0, joinDate: 'Unknown'}; let qSub = await getDocs(query(collection(db, "submissions"), where("uid", "==", uid))); document.getElementById('admin-wd-content').innerHTML = `<div class="section-box" style="text-align:center;"><h2 style="font-weight:800; font-size:1.8rem;">${name}</h2><h3 style="color:var(--primary); margin-top:5px; font-size:2rem;">৳ ${amount.toFixed(2)}</h3><p style="color:var(--muted); font-weight:600; margin-bottom:15px;">Method: ${method.toUpperCase()}</p><div class="data-box" onclick="copyData(this, 'w-modal-acc')" style="text-align:left;"><div><div class="data-label">ACCOUNT / ID</div><div class="data-value" id="w-modal-acc" style="font-size:1.2rem;">${account}</div></div><i class="fas fa-copy" style="font-size:1.2rem;"></i></div><div style="margin-top:20px; display:flex; gap:10px;"><button class="btn-main" style="background:var(--success); box-shadow:none;" onclick="processWithdrawModal('${docId}','${uid}',${amount},'approved')">Approve</button><button class="btn-main" style="background:var(--danger); box-shadow:none;" onclick="processWithdrawModal('${docId}','${uid}',${amount},'rejected')">Reject</button></div></div>`; openSubPage('admin-withdraw-details'); }; window.processWithdrawModal = async (docId, uid, amt, status) => { await processWithdraw(docId, uid, amt, status); closeSubPage(); };
         window.saveWithdrawSettings = async (btn) => { await withLoading(btn, async () => { await setDoc(doc(db, "settings", "config"), { wMin: parseFloat(document.getElementById('admin-w-min').value), wMax: parseFloat(document.getElementById('admin-w-max').value), dollarRate: parseFloat(document.getElementById('admin-w-rate').value), wRules: document.getElementById('admin-w-inst').value }, {merge:true}); showToast("Withdraw Config Saved!", "success"); }); }; window.saveAdminNotice = async (btn) => { await withLoading(btn, async () => { await setDoc(doc(db, "settings", "config"), { notice: document.getElementById('admin-notice-input').value }, {merge:true}); showToast("Notice Updated!", "success"); }); }; window.saveSupportLinks = async (btn) => { await withLoading(btn, async () => { await setDoc(doc(db, "settings", "config"), { tgLink: document.getElementById('admin-tg-link').value, waLink: document.getElementById('admin-wa-link').value, acLink: document.getElementById('admin-ac-link').value, refPercent: parseFloat(document.getElementById('admin-t-ref').value) }, {merge:true}); showToast("Config Updated!", "success"); }); };
-        window.processWithdraw = async (docId, uid, amt, status) => { await updateDoc(doc(db, "withdrawals", docId), { status: status }); if(status === 'approved') { await updateDoc(doc(db, "users", uid), { withdrawStatus: "Approved", withdrawn: increment(amt) }); } if(status === 'rejected') { await updateDoc(doc(db, "users", uid), { earned: increment(amt), withdrawStatus: "Rejected (Refunded)" }); } showToast(`Withdraw ${status}!`, "success"); }; window.processTaskReports = async (action, btn) => { let idsText = action === 'approve' ? document.getElementById('admin-approved-ids').value : document.getElementById('admin-rejected-ids').value; let taskIds = idsText.match(/WP-\d+/g); if(!taskIds) return showToast("No valid Task IDs!", "error"); showToast(`Processing ${action}...`, "info"); let successCount = 0; await withLoading(btn, async () => { const subsRef = collection(db, "submissions"); for(let tId of taskIds) { const querySnapshot = await getDocs(query(subsRef, where("taskId", "==", tId), where("status", "in", ["pending", "processing"]))); querySnapshot.forEach(async (docSnap) => { let taskData = docSnap.data(); if(action === 'approve') { await updateDoc(doc(db, "submissions", docSnap.id), { status: "approved" }); let upds = { approved: increment(1), earned: increment(taskData.price) }; if(taskData.status === 'pending') upds.pending = increment(-1); if(taskData.status === 'processing') upds.processing = increment(-1); await updateDoc(doc(db, "users", taskData.uid), upds); let uSnap = await getDoc(doc(db, "users", taskData.uid)); if(uSnap.exists() && uSnap.data().referrerId) { let refId = uSnap.data().referrerId; let commission = taskData.price * ((globalTaskConfig.refPercent || 10) / 100); await updateDoc(doc(db, "users", refId), { earned: increment(commission), refEarn: increment(commission), refToday: increment(commission) }).catch(e=>console.log("Ref Error:", e)); } } else if (action === 'reject') { await updateDoc(doc(db, "submissions", docSnap.id), { status: "rejected" }); let upds = { rejected: increment(1) }; if(taskData.status === 'pending') upds.pending = increment(-1); if(taskData.status === 'processing') upds.processing = increment(-1); await updateDoc(doc(db, "users", taskData.uid), upds); } successCount++; }); } showToast(`Successfully ${action}d ${successCount} tasks!`, "success"); if(action==='approve') document.getElementById('admin-approved-ids').value=''; else document.getElementById('admin-rejected-ids').value=''; }); }; window.cleanDuplicateTasks = async (btn) => { showToast("Scanning duplicates...", "info"); await withLoading(btn, async () => { const q = query(collection(db, "submissions"), where("status", "in", ["pending", "processing"])); const snap = await getDocs(q); let seenTasks = new Set(); let duplicates = []; snap.forEach(docSnap => { let tid = docSnap.data().taskId; if(seenTasks.has(tid)) { duplicates.push(docSnap.ref); } else { seenTasks.add(tid); } }); if(duplicates.length === 0) return showToast("No duplicates found!", "success"); let batch = writeBatch(db); duplicates.forEach(ref => batch.delete(ref)); await batch.commit(); showToast(`Cleaned ${duplicates.length} duplicate tasks!`, "success"); }); }; window.resetAllData = async (btn) => { let conf1 = confirm("⚠️ WARNING! This will delete ALL Submissions, Withdrawals, and Report History. Proceed?"); if(!conf1) return; let check = prompt("Type 'YES' to confirm Factory Reset:"); if(check !== "YES") return showToast("Cancelled", "error"); await withLoading(btn, async () => { showToast("Wiping Data...", "info"); let batch = writeBatch(db); let count = 0; const delDocs = async (collName) => { const s = await getDocs(collection(db, collName)); s.forEach(d => { batch.delete(d.ref); count++; if(count%400===0){batch.commit(); batch = writeBatch(db);} }); }; await delDocs("submissions"); await delDocs("withdrawals"); await delDocs("reports"); const uSnap = await getDocs(collection(db, "users")); uSnap.forEach(d => { batch.update(d.ref, { approved: 0, pending: 0, processing: 0, rejected: 0, withdrawn: 0, withdrawStatus: "None", refToday: 0 }); count++; if(count%400===0){batch.commit(); batch = writeBatch(db);} }); await batch.commit(); showToast("Factory Reset Complete!", "success"); }); };
+        window.processWithdraw = async (docId, uid, amt, status) => { await updateDoc(doc(db, "withdrawals", docId), { status: status }); if(status === 'approved') { await updateDoc(doc(db, "users", uid), { withdrawStatus: "Approved", withdrawn: increment(amt) }); } if(status === 'rejected') { await updateDoc(doc(db, "users", uid), { earned: increment(amt), withdrawStatus: "Rejected (Refunded)" }); } showToast(`Withdraw ${status}!`, "success"); }; window.processTaskReports = async (action, btn) => { let idsText = action === 'approve' ? document.getElementById('admin-approved-ids').value : document.getElementById('admin-rejected-ids').value; let taskIds = idsText.match(/WP-\d+/g); if(!taskIds) return showToast("No valid Task IDs!", "error"); showToast(`Processing ${action}...`, "info"); let successCount = 0; await withLoading(btn, async () => { const subsRef = collection(db, "submissions"); for(let tId of taskIds) { const querySnapshot = await getDocs(query(subsRef, where("taskId", "==", tId), where("status", "in", ["pending", "processing"]))); querySnapshot.forEach(async (docSnap) => { let taskData = docSnap.data(); if(action === 'approve') { await updateDoc(doc(db, "submissions", docSnap.id), { status: "approved" }); let upds = { approved: increment(1), todayApproved: increment(1), earned: increment(taskData.price) }; if(taskData.status === 'pending') upds.pending = increment(-1); if(taskData.status === 'processing') upds.processing = increment(-1); await updateDoc(doc(db, "users", taskData.uid), upds); let uSnap = await getDoc(doc(db, "users", taskData.uid)); if(uSnap.exists() && uSnap.data().referrerId) { let refId = uSnap.data().referrerId; let commission = taskData.price * ((globalTaskConfig.refPercent || 10) / 100); await updateDoc(doc(db, "users", refId), { earned: increment(commission), refEarn: increment(commission), refToday: increment(commission) }).catch(e=>console.log("Ref Error:", e)); } } else if (action === 'reject') { await updateDoc(doc(db, "submissions", docSnap.id), { status: "rejected" }); let upds = { rejected: increment(1) }; if(taskData.status === 'pending') upds.pending = increment(-1); if(taskData.status === 'processing') upds.processing = increment(-1); await updateDoc(doc(db, "users", taskData.uid), upds); } successCount++; }); } showToast(`Successfully ${action}d ${successCount} tasks!`, "success"); if(action==='approve') document.getElementById('admin-approved-ids').value=''; else document.getElementById('admin-rejected-ids').value=''; }); }; window.cleanDuplicateTasks = async (btn) => { showToast("Scanning duplicates...", "info"); await withLoading(btn, async () => { const q = query(collection(db, "submissions"), where("status", "in", ["pending", "processing"])); const snap = await getDocs(q); let seenTasks = new Set(); let duplicates = []; snap.forEach(docSnap => { let tid = docSnap.data().taskId; if(seenTasks.has(tid)) { duplicates.push(docSnap.ref); } else { seenTasks.add(tid); } }); if(duplicates.length === 0) return showToast("No duplicates found!", "success"); let batch = writeBatch(db); duplicates.forEach(ref => batch.delete(ref)); await batch.commit(); showToast(`Cleaned ${duplicates.length} duplicate tasks!`, "success"); }); }; window.resetAllData = async (btn) => { let conf1 = confirm("⚠️ WARNING! This will delete ALL Submissions, Withdrawals, and Report History. Proceed?"); if(!conf1) return; let check = prompt("Type 'YES' to confirm Factory Reset:"); if(check !== "YES") return showToast("Cancelled", "error"); await withLoading(btn, async () => { showToast("Wiping Data...", "info"); let batch = writeBatch(db); let count = 0; const delDocs = async (collName) => { const s = await getDocs(collection(db, collName)); s.forEach(d => { batch.delete(d.ref); count++; if(count%400===0){batch.commit(); batch = writeBatch(db);} }); }; await delDocs("submissions"); await delDocs("withdrawals"); await delDocs("reports"); const uSnap = await getDocs(collection(db, "users")); uSnap.forEach(d => { batch.update(d.ref, { approved: 0, todayApproved: 0, pending: 0, processing: 0, rejected: 0, withdrawn: 0, withdrawStatus: "None", refToday: 0 }); count++; if(count%400===0){batch.commit(); batch = writeBatch(db);} }); await batch.commit(); showToast("Factory Reset Complete!", "success"); }); };
 
         window.formatReportData = (docData, taskId, taskName) => { let cols = sheetConfigs[taskId]?.cols || ["Username", "Password", "2FA Code", "Task ID"]; let obj = {}; cols.forEach(col => { if(col === 'Username') obj[col] = docData.username || ''; else if(col === 'Password') obj[col] = docData.password || ''; else if(col === '2FA Code') obj[col] = docData.secret2fa || ''; else if(col === 'Cookies') obj[col] = docData.cookie || ''; else if(col === 'UID') obj[col] = docData.facebookUid || ''; else if(col === 'First Name') obj[col] = docData.firstName || ''; else if(col === 'Last Name') obj[col] = docData.lastName || ''; else if(col === 'Full Name') obj[col] = docData.fullName || ''; else if(col === 'Recovery Email') obj[col] = docData.recoveryMail || ''; else if(col === 'Generated Email') obj[col] = docData.generatedEmail || ''; else if(col === 'Task ID') obj[col] = docData.taskId || ''; else obj[col] = docData[col] || ''; }); return obj; };
         window.renderLiveSheets = () => { let container = document.getElementById('live-sheets-container'); let html = ''; let groups = {}; liveSubmissions.forEach(sub => { let sheetKey = sub.activeTaskId; if(!groups[sheetKey]) groups[sheetKey] = { id: sheetKey, name: sub.taskName || 'Unknown Task', data: [] }; groups[sheetKey].data.push(formatReportData(sub, sub.activeTaskId, sub.taskName)); }); if(Object.keys(groups).length === 0) { container.innerHTML = '<p style="text-align:center; color:var(--muted);">No active pending tasks to display.</p>'; return; } for(let [tId, group] of Object.entries(groups)) { html += `<div class="section-box" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left: 4px solid var(--primary);" onclick="openSingleLiveSheet('${tId}')"><div style="display:flex; align-items:center; gap:15px;"><i class="fas fa-file-excel" style="font-size:2rem; color:var(--success);"></i><div><b style="font-size:1.1rem; color:var(--primary);">${group.name}</b><p style="font-size:0.85rem; color:var(--muted); font-weight:600;">${group.data.length} Submissions</p></div></div><i class="fas fa-chevron-right" style="color:var(--muted);"></i></div>`; } container.innerHTML = html; window.currentLiveGroups = groups; };
@@ -405,7 +506,7 @@ const firebaseConfig = {
         
         // Reset Today Fixed (Stores Column Maps in DB)
         window.resetToday = async (btn) => { 
-            if(!confirm("Are you sure? This will save all active files to history and shift Pending to Processing.")) return; 
+            if(!confirm("Are you sure? This will save all active files to history and shift Pending to Processing. Also resets Leaderboard.")) return; 
             await withLoading(btn, async () => { 
                 const q = query(collection(db, "submissions"), where("archived", "==", false)); 
                 const snap = await getDocs(q); 
@@ -420,7 +521,7 @@ const firebaseConfig = {
                     batch.update(docSnap.ref, { archived: true, status: 'processing' }); 
                 }); 
                 const uSnap = await getDocs(collection(db, "users")); 
-                uSnap.forEach(d => { let ud = d.data(); let pend = ud.pending || 0; let proc = ud.processing || 0; batch.update(d.ref, { pending: 0, processing: proc + pend, refToday: 0 }); }); 
+                uSnap.forEach(d => { let ud = d.data(); let pend = ud.pending || 0; let proc = ud.processing || 0; batch.update(d.ref, { pending: 0, processing: proc + pend, refToday: 0, todayApproved: 0 }); }); 
                 if(Object.keys(reportsGroups).length > 0) { 
                     await setDoc(doc(collection(db, "reports")), { date: new Date().toLocaleString(), data: reportsGroups, sheetCols: sheetColsMap, timestamp: serverTimestamp() }); 
                 } 
